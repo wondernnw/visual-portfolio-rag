@@ -1,0 +1,6 @@
+byaldi==0.0.5
+pdf2image
+groq
+overrides
+ipython
+requests
