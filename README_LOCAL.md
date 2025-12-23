@@ -68,11 +68,18 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 # Install dependencies
 pip install byaldi transformers accelerate qwen-vl-utils sentence-transformers pymupdf
 
-# Download models
+# Download models (requires ~25GB disk space)
 git lfs install
+
+# ColPali retriever + base model
 git clone https://huggingface.co/vidore/colpali-v1.3
 git clone https://huggingface.co/vidore/colpaligemma-3b-pt-448-base
+
+# Qwen2-VL generator
+git clone https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct
 ```
+
+> **Note**: Models are not included in this repo due to size. Download them before running.
 
 ### Cluster Setup (MOGON-NHR)
 

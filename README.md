@@ -26,11 +26,14 @@ The system processes PDF pages as **images** to preserve tables, layouts, charts
 
 ## Models
 
-| Component | Model |
-|-----------|-------|
-| Retriever | [ColPali v1.3](https://huggingface.co/vidore/colpali-v1.3) |
-| Generator (Colab) | Llama 4 Scout via Groq API |
-| Generator (Local) | [Qwen2-VL-7B-Instruct](https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct) |
+| Component | Model | Download |
+|-----------|-------|----------|
+| Retriever | ColPali v1.3 | [HuggingFace](https://huggingface.co/vidore/colpali-v1.3) |
+| Base Model | colpaligemma-3b-pt-448-base | [HuggingFace](https://huggingface.co/vidore/colpaligemma-3b-pt-448-base) |
+| Generator (Colab) | Llama 4 Scout | via Groq API |
+| Generator (Local) | Qwen2-VL-7B-Instruct | [HuggingFace](https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct) |
+
+> **Note**: Models not included in repo (~25GB). See [README_LOCAL.md](README_LOCAL.md) for download instructions.
 
 ## License
 
