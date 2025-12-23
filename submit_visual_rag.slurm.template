@@ -36,8 +36,8 @@ mkdir -p logs
 
 # Run Visual RAG pipeline
 python run_visual_rag.py \
-    --pdf "doc/handbuch_portfolio.pdf" \
-    --query "Was sind die Bewertungskriterien für das Portfolio?" \
+    --pdf "doc/colpali_retrieval.pdf" \
+    --query "What is ColPali and how does it work?" \
     --top-k 3 \
     --reindex
 

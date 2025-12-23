@@ -1,6 +1,6 @@
 # Visual RAG Pipeline (Local/Cluster Version)
 
-A **Visual Retrieval-Augmented Generation (RAG)** system for evaluating German student portfolios. Uses ColPali for visual document retrieval and Qwen2-VL for multimodal answer generation.
+A **Visual Retrieval-Augmented Generation (RAG)** system for multimodal document understanding. Uses ColPali for visual document retrieval and Qwen2-VL for multimodal answer generation.
 
 > **Note**: This version uses local models for deployment on HPC clusters (e.g., MOGON-NHR). For the Colab version with Groq API, see [README_COLAB.md](README_COLAB.md).
 
@@ -35,7 +35,7 @@ Unlike traditional text-based RAG that relies on OCR, this system treats PDF pag
 └────────┬────────┘
          ↓
 ┌─────────────────┐
-│  German Answer  │
+│     Answer      │
 └─────────────────┘
 ```
 
@@ -46,6 +46,8 @@ Unlike traditional text-based RAG that relies on OCR, this system treats PDF pag
 | Retriever | [vidore/colpali-v1.3](https://huggingface.co/vidore/colpali-v1.3) | 3B | Visual document retrieval |
 | Base Model | [vidore/colpaligemma-3b-pt-448-base](https://huggingface.co/vidore/colpaligemma-3b-pt-448-base) | 3B | ColPali base model |
 | Generator | [Qwen/Qwen2-VL-7B-Instruct](https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct) | 7B | Multimodal answer generation |
+
+> **Why Qwen2-VL-7B?** Due to proxy/firewall restrictions, models cannot be downloaded directly on the HPC cluster. They must be downloaded locally and transferred manually. The 7B model was chosen to fit within local storage constraints (~15GB). For better results, consider using larger VLMs like Qwen2-VL-72B or LLaVA-NeXT if your setup allows direct downloads or larger storage.
 
 ## Requirements
 
@@ -107,7 +109,7 @@ export HF_HUB_OFFLINE=1
 Ask multiple questions without reloading models:
 
 ```bash
-python run_visual_rag.py --pdf "doc/handbuch_portfolio.pdf" --top-k 5 -i
+python run_visual_rag.py --pdf "doc/colpali_retrieval.pdf" --top-k 5 -i
 ```
 
 ```
@@ -125,7 +127,7 @@ Goodbye!
 
 ```bash
 python run_visual_rag.py \
-    --pdf "doc/handbuch_portfolio.pdf" \
+    --pdf "doc/colpali_retrieval.pdf" \
     --query "Was sind die Bewertungskriterien?" \
     --top-k 3
 ```
@@ -136,7 +138,7 @@ Required when using a new PDF or after changes:
 
 ```bash
 python run_visual_rag.py \
-    --pdf "doc/handbuch_portfolio.pdf" \
+    --pdf "doc/colpali_retrieval.pdf" \
     --query "..." \
     --top-k 3 \
     --reindex

@@ -1,6 +1,6 @@
 # Visual RAG Pipeline (Colab Version)
 
-A **Visual Retrieval-Augmented Generation (RAG)** system for evaluating German student portfolios. Uses ColPali for visual document retrieval and Llama Vision via Groq API for answer generation.
+A **Visual Retrieval-Augmented Generation (RAG)** system for multimodal document understanding. Uses ColPali for visual document retrieval and Llama Vision via Groq API for answer generation.
 
 > **Note**: This version uses Groq API for cloud-based inference. For local/cluster deployment with Qwen2-VL, see [README_LOCAL.md](README_LOCAL.md).
 
@@ -31,7 +31,7 @@ A **Visual Retrieval-Augmented Generation (RAG)** system for evaluating German s
 └────────┬────────┘
          ↓
 ┌─────────────────┐
-│  German Answer  │
+│     Answer      │
 └─────────────────┘
 ```
 
@@ -85,7 +85,7 @@ rag_system.authenticate()
 rag_system.ingest_pdf("path/to/document.pdf")
 
 # Ask questions
-results = rag_system.search("Was sind die Bewertungskriterien?", k=3)
+results = rag_system.search("What are the key findings?", k=3)
 answer = rag_system.generate_answer(query, results[0])
 ```
 
@@ -110,7 +110,7 @@ answer = rag_system.generate_answer(query, results[0])
 ## File Structure
 
 ```
-VisualRagPipeline/
+visual-portfolio-rag/
 ├── README.md                         # Main README (links to both)
 ├── README_COLAB.md                   # This file
 ├── README_LOCAL.md                   # Local/cluster docs
