@@ -154,32 +154,20 @@ python run_visual_rag.py \
 
 ## SLURM Job Submission
 
+1. Copy the template and edit with your paths:
+```bash
+cp submit_visual_rag.slurm.template submit_visual_rag.slurm
+# Edit submit_visual_rag.slurm with your email and project paths
+```
+
+2. Submit the job:
 ```bash
 sbatch submit_visual_rag.slurm
 ```
 
-Example SLURM script:
-
-```bash
-#!/bin/bash
-#SBATCH --job-name=visual_rag
-#SBATCH --partition=a100ai
-#SBATCH --gres=gpu:1
-#SBATCH --mem=64G
-#SBATCH --time=02:00:00
-
-module load lang/Anaconda3/2024.06-1
-source $(conda info --base)/etc/profile.d/conda.sh
-conda activate colpali_env
-
-export HF_HOME="/path/to/models"
-export HF_HUB_OFFLINE=1
-
-python run_visual_rag.py \
-    --pdf "doc/handbuch_portfolio.pdf" \
-    --query "Was sind die Bewertungskriterien?" \
-    --top-k 3
-```
+The template includes placeholders for:
+- `YOUR_EMAIL@uni-mainz.de` - your email for notifications
+- `YOUR_PROJECT` - your project directory path
 
 ## Project Structure
 
