@@ -1,6 +1,16 @@
-byaldi==0.0.5
-pdf2image
+# Core (both versions)
+byaldi>=0.0.5
+
+# Colab version
 groq
-overrides
-ipython
+pdf2image
 requests
+ipython
+
+# Local/Cluster version
+transformers
+accelerate
+qwen-vl-utils
+torch
+sentence-transformers
+pymupdf
