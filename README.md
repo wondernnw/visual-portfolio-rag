@@ -1,56 +1,86 @@
-# Visual RAG Pipeline
+# Visual Portfolio RAG
 
-A **Visual Retrieval-Augmented Generation (RAG)** system for multimodal document understanding. Unlike traditional text-based RAG, this system processes documents as **images**, preserving visual elements that text extraction often loses.
+A **Visual Retrieval-Augmented Generation** system for evaluating student portfolios. Processes PDF pages as images (preserving tables, handwriting, layout) and evaluates them against a checklist using ColPali retrieval + Groq API generation.
 
-## Why Visual RAG?
-
-Traditional OCR-based RAG struggles with:
-- Complex table structures
-- Charts and diagrams
-- Multi-column layouts
-- Handwritten annotations
-- Embedded images
-
-This pipeline treats each PDF page as an image, enabling the model to **see** and **reason** over the full visual context.
-
-## How It Works
+## Architecture
 
 ```
-PDF → Page Images → ColPali (Visual Retrieval) → MaxSim Search → Top-K Pages → VLM → Answer
+Cluster (GPU)                          Mac (no GPU)
+┌─────────────────────┐                ┌─────────────────────────┐
+│  export_bundle.py   │   scp bundle   │  streamlit chat_app/    │
+│  ColPali retrieval  │ ─────────────> │  Groq API evaluation    │
+│  → bundle.json      │                │  → PDF report           │
+└─────────────────────┘                └─────────────────────────┘
 ```
 
-![Architecture](doc/image.png)
+ColPali needs a GPU but Streamlit can't run on the HPC cluster (networking restrictions). So the work is split:
 
-## Deployment Options
+- **Cluster**: ColPali indexes the portfolio, searches each criterion, exports a JSON bundle with base64 page images
+- **Mac**: Loads the bundle, evaluates each criterion via Groq API, generates a PDF report
 
-| Version | Generator | Setup | Guide |
-|---------|-----------|-------|-------|
-| **Colab** | Llama Vision (Groq API) | Simple, cloud-based | [README_COLAB.md](README_COLAB.md) |
-| **Local/Cluster** | Qwen2-VL-7B | HPC deployment, offline | [README_LOCAL.md](README_LOCAL.md) |
+## Setup
 
-## Quick Links
+**Mac** (Streamlit app):
+```bash
+pip install -r requirements.txt
+```
 
-- **Colab Notebook**: [visual_rag_pipeline_colab.ipynb](visual_rag_pipeline_colab.ipynb)
-- **Local Script**: [run_visual_rag.py](run_visual_rag.py)
+**Cluster** (bundle export):
+```bash
+pip install -r requirements-cluster.txt
+```
+
+## Usage
+
+### 1. Export bundle on cluster
+
+```bash
+# Copy portfolio to cluster
+scp portfolio.pdf cluster:~/PortfolioEvalTool/uploads/
+
+# Run export job
+ssh cluster
+sbatch submit_export.slurm uploads/portfolio.pdf
+
+# Copy bundle back to Mac
+scp cluster:~/PortfolioEvalTool/bundles/bundle_*.json ./bundles/
+```
+
+Or run directly (interactive node with GPU):
+```bash
+python export_bundle.py --portfolio uploads/portfolio.pdf --criteria criteria.json --top-k 3 --output bundles/bundle.json
+```
+
+### 2. Evaluate on Mac
+
+```bash
+streamlit run chat_app/app.py
+```
+
+In the browser:
+1. Enter Groq API key
+2. Upload the bundle JSON
+3. Optionally upload the checkliste PDF (adds context images)
+4. Click **"Bewertung starten"**
+5. Download the PDF report
+
+## Files
+
+| File | Description |
+|------|-------------|
+| `criteria.json` | 10 fixed evaluation criteria (8.5 max points) |
+| `export_bundle.py` | Cluster CLI: ColPali retrieval → JSON bundle |
+| `submit_export.slurm` | SLURM job script for bundle export |
+| `chat_app/` | Streamlit app (bundle upload → Groq evaluation → PDF) |
+| `requirements.txt` | Mac dependencies (no GPU) |
+| `requirements-cluster.txt` | Cluster dependencies (byaldi, torch) |
 
 ## Models
 
-| Component | Model | Download |
-|-----------|-------|----------|
-| Retriever | ColPali v1.3 | [HuggingFace](https://huggingface.co/vidore/colpali-v1.3) |
-| Base Model | colpaligemma-3b-pt-448-base | [HuggingFace](https://huggingface.co/vidore/colpaligemma-3b-pt-448-base) |
-| Generator (Colab) | Llama 4 Scout | via Groq API |
-| Generator (Local) | Qwen2-VL-7B-Instruct | [HuggingFace](https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct) |
-
-> **Note**: Models not included in repo (~25GB). See [README_LOCAL.md](README_LOCAL.md) for download instructions.
-
-## Use Cases
-
-- Technical documentation with diagrams
-- Financial reports with tables and charts
-- Scientific papers with figures
-- Scanned documents with mixed content
-- Any PDF where layout matters
+| Component | Model | Where |
+|-----------|-------|-------|
+| Retriever | ColPali v1.3 | Cluster GPU |
+| Generator | Llama 4 Scout | Groq API |
 
 ## License
 

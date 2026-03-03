@@ -35,7 +35,7 @@ cd /lustre/project/ki-qarbs/nwang01/PortfolioEvalTool
 mkdir -p logs bundles
 
 # ---- Configure these paths before running ----
-PORTFOLIO="${1:-uploads/portfolio.pdf}"
+PORTFOLIO="${1:-uploads/portfolios/motivation_adam.pdf}"
 CRITERIA="criteria.json"
 TOP_K=3
 OUTPUT="bundles/bundle_$(date +%Y%m%d_%H%M%S).json"

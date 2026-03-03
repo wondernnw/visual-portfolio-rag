@@ -65,12 +65,13 @@ def main():
         "HF_HOME",
         "/lustre/project/ki-qarbs/nwang01/PortfolioEvalTool/models",
     )
-    # Try local model first
+    # Try local model first — prefer HF cache snapshot format (works with byaldi)
     model_path = "vidore/colpali-v1.3"
-    for candidate in [
-        os.path.join(hf_home, "hub/colpali-v1.3"),
+    candidates = [
         os.path.join(hf_home, "hub/models--vidore--colpali-v1.3/snapshots"),
-    ]:
+        os.path.join(hf_home, "hub/colpali-v1.3"),
+    ]
+    for candidate in candidates:
         if os.path.exists(candidate):
             if candidate.endswith("snapshots"):
                 snaps = os.listdir(candidate)
