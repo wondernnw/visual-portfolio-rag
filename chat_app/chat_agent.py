@@ -175,21 +175,23 @@ class DeterministicAgent:
 
     def run_full_pipeline(
         self,
-        portfolio_path: str,
-        checkliste_path: str,
+        bundle_path: str,
+        checkliste_path: Optional[str] = None,
     ) -> Generator[ChatEvent, None, None]:
-        """Run the full evaluation pipeline step by step."""
-        # Step 1: Index portfolio
-        yield from self.run_step("index_portfolio", {"path": portfolio_path, "force": True})
+        """Run the full evaluation pipeline step by step.
 
-        # Step 2: Extract criteria from checkliste
-        yield from self.run_step("index_checkliste", {"path": checkliste_path})
+        Loads a pre-computed bundle, optionally loads checkliste images,
+        evaluates all criteria via Groq, and generates a PDF report.
+        """
+        # Step 1: Load retrieval bundle
+        yield from self.run_step("load_bundle", {"path": bundle_path})
 
-        # Step 3: Search portfolio
-        yield from self.run_step("search_portfolio", {"query": "", "top_k": 3})
+        # Step 2: Load checkliste images (optional, for evaluation context)
+        if checkliste_path:
+            yield from self.run_step("load_checkliste", {"path": checkliste_path})
 
-        # Step 4: Evaluate all criteria
+        # Step 3: Evaluate all criteria
         yield from self.run_step("evaluate_all", {})
 
-        # Step 5: Generate report
+        # Step 4: Generate report
         yield from self.run_step("generate_report", {"output_path": ""})

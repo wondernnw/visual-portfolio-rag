@@ -1,5 +1,4 @@
-# ColPali retrieval (cluster GPU) + Groq generation (API)
-byaldi>=0.0.5
+# Mac Streamlit app (no GPU needed)
 pymupdf
 fpdf2>=2.7.5
 streamlit>=1.35.0

@@ -1,0 +1,4 @@
+# Cluster: ColPali retrieval + bundle export (GPU)
+byaldi>=0.0.5
+pymupdf
+torch

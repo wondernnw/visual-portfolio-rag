@@ -64,7 +64,7 @@ class MCPBridge:
         """Call an MCP tool synchronously.
 
         Args:
-            name: Tool name (e.g., "index_portfolio").
+            name: Tool name (e.g., "load_bundle").
             arguments: Tool arguments as a dict.
 
         Returns:

@@ -19,32 +19,12 @@ def detect_device() -> str:
     return "cpu"
 
 
-HF_HOME = os.environ.get(
-    "HF_HOME",
-    "/lustre/project/ki-qarbs/nwang01/PortfolioEvalTool/models",
-)
-INDEX_NAME = "portfolio_eval_index"
-
-
-def find_local_colpali() -> str:
-    """Find ColPali model -- local path or HuggingFace ID."""
-    direct = os.path.join(HF_HOME, "hub/colpali-v1.3")
-    if os.path.exists(direct):
-        return direct
-    cache = os.path.join(HF_HOME, "hub/models--vidore--colpali-v1.3/snapshots")
-    if os.path.exists(cache):
-        snaps = os.listdir(cache)
-        if snaps:
-            return os.path.join(cache, snaps[0])
-    return "vidore/colpali-v1.3"
-
-
 @dataclass
 class AppConfig:
     """Application configuration.
 
-    ColPali runs on cluster GPU for retrieval.
-    Groq API handles all generation.
+    Mac-side: no GPU needed. Groq API handles all generation.
+    Retrieval results come from pre-computed bundles.
     """
 
     device: str = field(default_factory=detect_device)
@@ -53,7 +33,6 @@ class AppConfig:
     )
     groq_model: str = "meta-llama/llama-4-scout-17b-16e-instruct"
     top_k: int = 3
-    index_name: str = INDEX_NAME
     upload_dir: str = "uploads"
     results_dir: str = "results"
 

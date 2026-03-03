@@ -1,8 +1,10 @@
-"""Streamlit Chat UI for Portfolio Evaluation Agent."""
+"""Streamlit Chat UI for Portfolio Evaluation Agent.
+
+Mac-side app: loads a pre-computed retrieval bundle, evaluates via Groq API.
+"""
 
 import json
 import os
-import tempfile
 from datetime import datetime
 
 from dotenv import load_dotenv
@@ -33,7 +35,7 @@ def init_session():
     st.session_state.messages = []
     st.session_state.bridge = None
     st.session_state.agent = None
-    st.session_state.portfolio_path = None
+    st.session_state.bundle_path = None
     st.session_state.checkliste_path = None
     st.session_state.evaluations = None
     st.session_state.report_path = None
@@ -106,22 +108,18 @@ def display_tool_event(event: ChatEvent):
 
 def _display_tool_result_ok(tool_name: str, result: dict):
     """Display successful tool results with appropriate formatting."""
-    if tool_name == "index_portfolio":
-        st.success(f"Portfolio indiziert: {result['pages']} Seiten")
-
-    elif tool_name == "index_checkliste":
+    if tool_name == "load_bundle":
+        name = result.get("portfolio_name", "?")
         count = result.get("criteria_count", 0)
-        st.success(f"{count} Kriterien extrahiert")
+        st.success(f"Bundle geladen: {name} ({count} Kriterien)")
         criteria = result.get("criteria", [])
         if criteria:
             for i, c in enumerate(criteria):
                 st.caption(f"  {i+1}. {c['kriterium']} (max. {c['max_punkte']} Pkt.)")
 
-    elif tool_name == "search_portfolio":
-        results = result.get("results", {})
-        for query, hits in results.items():
-            pages = ", ".join(f"S.{h['page']}" for h in hits)
-            st.caption(f"  {query[:50]}... -> [{pages}]")
+    elif tool_name == "load_checkliste":
+        pages = result.get("pages", 0)
+        st.success(f"Checkliste geladen: {pages} Seiten")
 
     elif tool_name == "evaluate_criterion":
         ev = result.get("evaluation", {})
@@ -153,7 +151,6 @@ def _display_single_evaluation(ev: dict):
     with col1:
         st.markdown(f"**{kriterium}**")
     with col2:
-        color = "normal" if punkte >= max_p else "inverse"
         st.metric("Punkte", f"{punkte}/{max_p}", delta=None)
 
     if ev.get("kommentar"):
@@ -204,22 +201,24 @@ def render_sidebar():
         st.divider()
 
         # File uploads
-        st.subheader("Dokumente hochladen")
+        st.subheader("Dateien hochladen")
 
-        portfolio_file = st.file_uploader(
-            "Portfolio PDF",
-            type=["pdf"],
-            key="portfolio_upload",
+        bundle_file = st.file_uploader(
+            "Retrieval-Bundle (JSON)",
+            type=["json"],
+            key="bundle_upload",
+            help="Vom Cluster exportiertes Bundle (export_bundle.py)",
         )
-        if portfolio_file:
-            path = save_uploaded_file(portfolio_file, "portfolios")
-            st.session_state.portfolio_path = path
-            st.success(f"Portfolio: {portfolio_file.name}")
+        if bundle_file:
+            path = save_uploaded_file(bundle_file, "bundles")
+            st.session_state.bundle_path = path
+            st.success(f"Bundle: {bundle_file.name}")
 
         checkliste_file = st.file_uploader(
-            "Checkliste PDF",
+            "Checkliste PDF (optional)",
             type=["pdf"],
             key="checkliste_upload",
+            help="Fuer Checklisten-Bilder in der Bewertung",
         )
         if checkliste_file:
             path = save_uploaded_file(checkliste_file, "checklisten")
@@ -231,30 +230,20 @@ def render_sidebar():
         # Action buttons
         st.subheader("Aktionen")
 
-        both_uploaded = (
-            st.session_state.portfolio_path and st.session_state.checkliste_path
-        )
+        bundle_ready = bool(st.session_state.bundle_path)
 
         if st.button(
-            "Vollstaendige Bewertung starten",
-            disabled=not both_uploaded,
+            "Bewertung starten",
+            disabled=not bundle_ready,
             use_container_width=True,
         ):
             st.session_state.run_full_pipeline = True
 
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("Portfolio indizieren", disabled=not st.session_state.portfolio_path):
-                st.session_state.run_step = ("index_portfolio", {"path": st.session_state.portfolio_path, "force": True})
-        with col2:
             if st.button("Checkliste laden", disabled=not st.session_state.checkliste_path):
-                st.session_state.run_step = ("index_checkliste", {"path": st.session_state.checkliste_path})
-
-        col3, col4 = st.columns(2)
-        with col3:
-            if st.button("Seiten suchen", disabled=not both_uploaded):
-                st.session_state.run_step = ("search_portfolio", {"query": "", "top_k": 3})
-        with col4:
+                st.session_state.run_step = ("load_checkliste", {"path": st.session_state.checkliste_path})
+        with col2:
             if st.button("PDF-Bericht", disabled=not st.session_state.evaluations):
                 st.session_state.run_step = ("generate_report", {"output_path": ""})
 
@@ -340,19 +329,19 @@ def _handle_chat_input(user_input: str):
 
 
 def _run_full_pipeline():
-    """Run the full evaluation pipeline with deterministic step-by-step execution."""
-    portfolio = st.session_state.portfolio_path
-    checkliste = st.session_state.checkliste_path
+    """Run the full evaluation pipeline: load bundle, (optionally) checkliste, evaluate, report."""
+    bundle_path = st.session_state.bundle_path
+    checkliste_path = st.session_state.checkliste_path
 
-    if not portfolio or not checkliste:
-        st.error("Portfolio und Checkliste muessen hochgeladen sein.")
+    if not bundle_path:
+        st.error("Bundle muss hochgeladen sein.")
         return
 
     pipeline = DeterministicAgent(bridge=st.session_state.bridge)
 
     with st.chat_message("assistant"):
         with st.status("Bewertung laeuft...", expanded=True):
-            for event in pipeline.run_full_pipeline(portfolio, checkliste):
+            for event in pipeline.run_full_pipeline(bundle_path, checkliste_path):
                 display_tool_event(event)
                 if (event.type == EventType.TOOL_RESULT
                         and event.tool_name == "evaluate_all"

@@ -1,6 +1,7 @@
-"""FastMCP server with 6 tools wrapping EvaluationEngine methods.
+"""FastMCP server wrapping EvaluationEngine methods.
 
-Runs in-process (no separate server) -- shares GPU state with the app.
+Runs in-process (no separate server) -- no GPU needed on Mac.
+Bundle-based: load a pre-computed retrieval bundle, then evaluate via Groq.
 """
 
 from typing import Optional
@@ -37,46 +38,29 @@ def get_engine() -> EvaluationEngine:
 
 
 @mcp.tool()
-def index_portfolio(path: str, force: bool = False) -> dict:
-    """Index a portfolio PDF with ColPali for visual retrieval.
+def load_bundle(path: str) -> dict:
+    """Load a pre-computed retrieval bundle (from cluster export).
 
     Args:
-        path: Path to the portfolio PDF file.
-        force: Force re-indexing even if index exists.
+        path: Path to the bundle JSON file.
 
     Returns:
-        Status with page count.
+        Status with portfolio name and criteria list.
     """
-    return get_engine().index_portfolio(path, force)
+    return get_engine().load_bundle(path)
 
 
 @mcp.tool()
-def index_checkliste(path: str) -> dict:
-    """Extract evaluation criteria from a checkliste PDF.
+def load_checkliste(path: str) -> dict:
+    """Load checkliste PDF images for evaluation context.
 
     Args:
         path: Path to the checkliste PDF file.
 
     Returns:
-        Extracted criteria list with count.
+        Status with page count.
     """
-    return get_engine().index_checkliste(path)
-
-
-@mcp.tool()
-def search_portfolio(query: str = "", top_k: int = 3) -> dict:
-    """Search the indexed portfolio for relevant pages.
-
-    If query is empty, searches for all extracted criteria.
-
-    Args:
-        query: Search query (leave empty to search all criteria).
-        top_k: Number of pages to retrieve per query.
-
-    Returns:
-        Search results with page numbers and scores.
-    """
-    return get_engine().search_portfolio(query or None, top_k)
+    return get_engine().load_checkliste(path)
 
 
 @mcp.tool()

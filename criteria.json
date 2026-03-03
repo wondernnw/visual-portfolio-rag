@@ -1,0 +1,62 @@
+[
+  {
+    "kriterium": "Werden die Lernziele der Lernstandsmessung genannt?",
+    "max_punkte": 1.0,
+    "anmerkung_auswerter": "0,5 Lernziele der Lernstandsmessung benannt. 0,5 Lernziele der Lernstandsmessung mit Operatoren benannt",
+    "erklaerung": "Fuer die Lernfoerderliche Rueckmeldung ist es wichtig, dass die Lernziele der geschriebenen Klassenarbeit klar benannt worden sind. Fuer dieses Kriterium wird maximal 1 Punkt vergeben. 0,5 Punkte werden vergeben, wenn die Lernziele der Klassenarbeit benannt sind und weitere 0,5 Punkte, wenn fuer die Nennung der Lernziele passende Operatoren verwendet worden sind."
+  },
+  {
+    "kriterium": "Werden positive individuelle Leistungselemente in der Lernstandsmessung beschrieben?",
+    "max_punkte": 1.0,
+    "anmerkung_auswerter": "1 positive individuelle Leistungselemente in der Lernstandsmessung werden beschrieben",
+    "erklaerung": "Fuer dieses Kriterium ist es relevant, dass positive individuelle Leistungselemente beschrieben worden sind und hierfuer 1 Punkt vergeben."
+  },
+  {
+    "kriterium": "Werden erreichte Lernfortschritte (individuelle BN) beschrieben?",
+    "max_punkte": 1.0,
+    "anmerkung_auswerter": "1 erreichte individuelle Lernfortschritte werden beschrieben (im Vergleich zu vorher)",
+    "erklaerung": "Fuer dieses Kriterium wird mit maximal 1 Punkt bewertet, ob auf individuelle Lernfortschritte Bezug genommen wird. Die individuelle Bezugsnorm steht hier im Vordergrund."
+  },
+  {
+    "kriterium": "Wird eine wertschaetzende Einschaetzung der Anstrengung im Vorfeld, ggf. auch waehrend der Lernstandsmessung, vorgenommen?",
+    "max_punkte": 0.5,
+    "anmerkung_auswerter": "0,5 wertschaetzende Einschaetzung der Anstrengung im Vorfeld / waehrend der Lernstandsmessung benannt",
+    "erklaerung": "Wird eine Einschaetzung der Anstrengungen im Vorfeld und/oder waehrend der Lernstandsmessung in wertschaetzender Weise vorgenommen, werden hier maximal 0,5 Punkte vergeben."
+  },
+  {
+    "kriterium": "Werden korrigierbare Defizite praezise benannt?",
+    "max_punkte": 1.0,
+    "anmerkung_auswerter": "0,5 Defizite werden benannt. 0,5 Defizite werden praezise benannt",
+    "erklaerung": "Zu einer Rueckmeldung gehoert auch der Bezug auf Lerndefizite. Hierfuer wird maximal 1 Punkt vergeben. Wird auf Lerndefizite Bezug genommen, werden 0,5 Punkte vergeben, weitere 0,5 Punkte werden vergeben, wenn diese konkret/praezise benannt worden sind, also anhand der expliziten Leistungen orientiert/mit Beispielen belegt."
+  },
+  {
+    "kriterium": "Werden konkrete Hinweise auf deren Behebung gegeben?",
+    "max_punkte": 1.0,
+    "anmerkung_auswerter": "0,5 Hinweise auf Behebung der Defizite gegeben. 0,5 Hinweise sind konkret, z. B. Nennung ganz bestimmter Buchkapitel oder Aehnliches, keine Allgemeinplaetze",
+    "erklaerung": "Fuer dieses Kriterium wird maximal 1 Punkt gegeben. 0,5 Punkte werden vergeben, wenn Hinweise zur Behebung der Defizite genannt worden sind, weitere 0,5 Punkte, wenn diese konkret benannt werden, also mit expliziten Buchseiten, Arbeitsblaettern etc."
+  },
+  {
+    "kriterium": "Wird der Anteil der richtigen Loesungen oder eine sachnormorientierte Ziffernzensur (d. h. Endnote) angegeben?",
+    "max_punkte": 1.0,
+    "anmerkung_auswerter": "Entweder Anteil an richtigen Loesungen (fuer alle drei Aufgaben ODER Gesamt) ODER konkrete Note angegeben ODER beides",
+    "erklaerung": "Dieses Kriterium bezieht sich auf die kriteriale Bezugsnorm. Es sollen also explizit die Leistungswerte genannt werden, beispielsweise die Anzahl korrekter Loesungen bzw. die vergebene Note, bestenfalls beides. Hierfuer wird 1 Punkt vergeben, sonst 0 Punkte."
+  },
+  {
+    "kriterium": "Wird er/sie ueber die Position im Leistungsspektrum der Klasse (in dieser Lernstandsmessung) informiert? (z.B. im oberen Drittel)",
+    "max_punkte": 0.5,
+    "anmerkung_auswerter": "0,5 im Leistungsspektrum der Klasse verortet",
+    "erklaerung": "Dieses Kriterium beruecksichtigt die soziale Bezugsnorm. Wird die individuelle Leistung im Vergleich zum Leistungsspektrum der Klasse klar benannt, werden 0,5 Punkte vergeben."
+  },
+  {
+    "kriterium": "Ist die Schlussbemerkung motivationsfoerderlich? z.B. es wird Zuversicht fuer den weiteren Lernweg geaeussert",
+    "max_punkte": 1.0,
+    "anmerkung_auswerter": "1 Schlussbemerkung ist motivationsfoerderlich, Zuversicht wurde geaeussert und Kommentar endet nicht mit Defiziten. Im Zweifel nach Bauchgefuehl gehen: Wuerde Euch die Bemerkung aufbauen und motivieren oder eher nicht?",
+    "erklaerung": "Fuer dieses Kriterium wird beruecksichtigt, inwieweit das abschliessende Feedback motivationsfoerderlich ist, bspw. Zuversicht fuer den weiteren Lernweg geaeussert wird, motivierende Worte gefunden worden sind, und dafuer 1 Punkt vergeben."
+  },
+  {
+    "kriterium": "Ist die Sprache dem Alter angemessen?",
+    "max_punkte": 0.5,
+    "anmerkung_auswerter": "0,5 Sprache ist dem Alter angemessen",
+    "erklaerung": "Wird eine altersgerechte Sprache verwendet, wird 1 Punkt vergeben, sonst 0 Punkte."
+  }
+]

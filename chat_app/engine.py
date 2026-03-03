@@ -1,21 +1,33 @@
 """EvaluationEngine -- core logic for portfolio evaluation.
 
-ColPali handles multimodal retrieval (always on cluster GPU).
-VLM backend (Groq API or local Qwen2-VL) handles generation.
-No model swapping needed when using Groq — ColPali stays loaded.
+Loads a pre-computed retrieval bundle (from export_bundle.py on the cluster).
+VLM backend (Groq API) handles all generation.
+No ColPali or GPU needed on the Mac side.
 """
 
 import base64
 import json
 import os
 import re
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import fitz  # pymupdf
 
-from chat_app.config import AppConfig, find_local_colpali
-from chat_app.prompts import CHECKLISTE_EXTRACTION_PROMPT, build_evaluation_prompt
+from chat_app.prompts import build_evaluation_prompt
 from chat_app.vlm_backends import VLMBackend
+
+
+# ---------------------------------------------------------------------------
+# Data classes
+# ---------------------------------------------------------------------------
+
+@dataclass
+class PageResult:
+    """A single retrieved page from the bundle — matches byaldi Result interface."""
+    page_num: int
+    score: float
+    base64: str
 
 
 # ---------------------------------------------------------------------------
@@ -65,135 +77,78 @@ def parse_json_from_text(text: str):
 class EvaluationEngine:
     """Stateful engine for portfolio evaluation against a checklist.
 
-    ColPali stays loaded on GPU for retrieval.
-    VLM (Groq API) handles all generation — no swapping needed.
+    Works with pre-computed retrieval bundles (no GPU needed).
+    VLM (Groq API) handles all generation.
     """
 
-    def __init__(self, config: AppConfig, vlm: VLMBackend):
+    def __init__(self, config, vlm: VLMBackend):
         self.config = config
         self.vlm = vlm
 
-        # ColPali retriever — loaded once, stays in GPU memory
-        self._rag = None
-
         # Cached state
-        self.portfolio_path: Optional[str] = None
-        self.checkliste_path: Optional[str] = None
+        self.portfolio_name: Optional[str] = None
         self.checkliste_images: Optional[List[str]] = None
         self.criteria: Optional[List[Dict]] = None
-        self.hits_map: Optional[Dict[str, List]] = None
+        self.hits_map: Optional[Dict[str, List[PageResult]]] = None
         self.evaluations: Optional[List[Dict]] = None
 
-    # ---- ColPali lifecycle -------------------------------------------------
+    # ---- Bundle loading -----------------------------------------------------
 
-    def _load_colpali(self):
-        if self._rag is None:
-            from byaldi import RAGMultiModalModel
+    def load_bundle(self, path: str) -> Dict:
+        """Load a pre-computed retrieval bundle from export_bundle.py.
 
-            path = find_local_colpali()
-            device = self.config.device
-            print(f"[ColPali] Loading retriever from {path} on {device}")
-            self._rag = RAGMultiModalModel.from_pretrained(path, device=device)
-            print("[ColPali] Ready.")
-
-    def _load_colpali_index(self):
-        if self._rag is None:
-            from byaldi import RAGMultiModalModel
-
-            print("[ColPali] Loading from index ...")
-            self._rag = RAGMultiModalModel.from_index(
-                self.config.index_name, index_root=".byaldi"
-            )
-            print("[ColPali] Ready.")
-
-    # ---- Public MCP-callable methods ---------------------------------------
-
-    def index_portfolio(self, path: str, force: bool = False) -> Dict:
-        """Index the portfolio PDF with ColPali for visual retrieval.
+        The bundle contains criteria, and per-criterion retrieved pages
+        with base64 images and scores.
 
         Returns:
-            {"status": "ok", "pages": <int>, "path": <str>}
+            {"status": "ok", "portfolio_name": str, "criteria_count": int, "criteria": [...]}
         """
         if not os.path.exists(path):
-            raise FileNotFoundError(f"Portfolio not found: {path}")
+            raise FileNotFoundError(f"Bundle not found: {path}")
 
-        self._load_colpali()
-        self._rag.index(
-            input_path=path,
-            index_name=self.config.index_name,
-            store_collection_with_index=True,
-            overwrite=force or True,
-        )
-        self.portfolio_path = path
+        with open(path) as f:
+            bundle = json.load(f)
 
-        doc = fitz.open(path)
-        n_pages = len(doc)
-        doc.close()
+        self.portfolio_name = bundle.get("portfolio_name", "Portfolio")
+        self.criteria = bundle["criteria"]
 
-        print(f"[Engine] Portfolio indexed: {path} ({n_pages} pages)")
-        return {"status": "ok", "pages": n_pages, "path": path}
+        # Reconstruct hits_map as PageResult objects
+        raw_hits = bundle.get("hits_map", {})
+        self.hits_map = {}
+        for criterion_key, hit_list in raw_hits.items():
+            self.hits_map[criterion_key] = [
+                PageResult(
+                    page_num=h["page_num"],
+                    score=h["score"],
+                    base64=h["base64"],
+                )
+                for h in hit_list
+            ]
 
-    def index_checkliste(self, path: str) -> Dict:
-        """Extract evaluation criteria from the checkliste PDF.
+        print(f"[Engine] Bundle loaded: {self.portfolio_name}, {len(self.criteria)} criteria")
+        return {
+            "status": "ok",
+            "portfolio_name": self.portfolio_name,
+            "criteria_count": len(self.criteria),
+            "criteria": self.criteria,
+        }
+
+    # ---- Checkliste loading (for display images in evaluation) --------------
+
+    def load_checkliste(self, path: str) -> Dict:
+        """Load checkliste PDF images for use in evaluation prompts.
 
         Returns:
-            {"status": "ok", "criteria_count": <int>, "criteria": [...]}
+            {"status": "ok", "pages": int}
         """
         if not os.path.exists(path):
             raise FileNotFoundError(f"Checkliste not found: {path}")
 
-        self.checkliste_path = path
         self.checkliste_images = pdf_to_base64_images(path)
+        print(f"[Engine] Checkliste loaded: {len(self.checkliste_images)} pages")
+        return {"status": "ok", "pages": len(self.checkliste_images)}
 
-        content = [
-            {"type": "image", "image": f"data:image/jpeg;base64,{img}"}
-            for img in self.checkliste_images
-        ]
-        content.append({"type": "text", "text": CHECKLISTE_EXTRACTION_PROMPT})
-
-        raw = self.vlm.generate(content, max_tok=4096)
-        criteria = parse_json_from_text(raw)
-
-        if not criteria or not isinstance(criteria, list):
-            print(f"  WARNING -- raw VLM output:\n{raw}")
-            return {"status": "error", "criteria_count": 0, "criteria": [], "raw": raw}
-
-        self.criteria = criteria
-        print(f"[Engine] Extracted {len(criteria)} criteria")
-        return {
-            "status": "ok",
-            "criteria_count": len(criteria),
-            "criteria": criteria,
-        }
-
-    def search_portfolio(self, query: Optional[str] = None, top_k: Optional[int] = None) -> Dict:
-        """Search portfolio with ColPali for pages relevant to criteria.
-
-        Returns:
-            {"status": "ok", "results": {<criterion>: [{"page": <int>, "score": <float>}, ...]}}
-        """
-        top_k = top_k or self.config.top_k
-        self._load_colpali_index()
-
-        if query:
-            hits = self._rag.search(query, k=top_k)
-            results = {query: [{"page": h.page_num, "score": h.score} for h in hits]}
-            return {"status": "ok", "results": results}
-
-        if not self.criteria:
-            return {"status": "error", "message": "No criteria extracted yet. Run index_checkliste first."}
-
-        results_map: Dict[str, List] = {}
-        hits_map_raw: Dict[str, List] = {}
-        for c in self.criteria:
-            k = c["kriterium"]
-            hits = self._rag.search(k, k=top_k)
-            hits_map_raw[k] = hits
-            results_map[k] = [{"page": h.page_num, "score": round(h.score, 4)} for h in hits]
-
-        self.hits_map = hits_map_raw
-        print(f"[Engine] Searched portfolio for {len(self.criteria)} criteria")
-        return {"status": "ok", "results": results_map}
+    # ---- Public MCP-callable methods ----------------------------------------
 
     def evaluate_criterion(self, criterion_index: int) -> Dict:
         """Evaluate a single criterion by its index.
@@ -202,9 +157,9 @@ class EvaluationEngine:
             {"status": "ok", "evaluation": {kriterium, max_punkte, punkte, kommentar, seiten_referenzen, zitat}}
         """
         if not self.criteria:
-            return {"status": "error", "message": "No criteria extracted yet."}
+            return {"status": "error", "message": "No criteria loaded. Load a bundle first."}
         if not self.hits_map:
-            return {"status": "error", "message": "No search results. Run search_portfolio first."}
+            return {"status": "error", "message": "No search results. Load a bundle first."}
         if criterion_index < 0 or criterion_index >= len(self.criteria):
             return {"status": "error", "message": f"Invalid criterion index: {criterion_index}"}
 
@@ -218,11 +173,9 @@ class EvaluationEngine:
             {"status": "ok", "evaluations": [...], "total": <float>, "total_max": <float>}
         """
         if not self.criteria:
-            return {"status": "error", "message": "No criteria extracted yet."}
-
-        # Search if not done yet
+            return {"status": "error", "message": "No criteria loaded. Load a bundle first."}
         if not self.hits_map:
-            self.search_portfolio()
+            return {"status": "error", "message": "No search results. Load a bundle first."}
 
         evaluations = []
         for c in self.criteria:
@@ -270,7 +223,7 @@ class EvaluationEngine:
         make_pdf(
             evaluations=self.evaluations,
             output_path=output_path,
-            portfolio_name=self.portfolio_path or "Portfolio",
+            portfolio_name=self.portfolio_name or "Portfolio",
         )
 
         total = sum(e["punkte"] for e in self.evaluations)
