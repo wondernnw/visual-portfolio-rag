@@ -7,6 +7,7 @@ A **Visual Retrieval-Augmented Generation (RAG)** system for multimodal document
 ## Overview
 
 Unlike traditional text-based RAG that relies on OCR, this system treats PDF pages as **images** to preserve:
+
 - Table structures
 - Document layouts
 - Formatting and visual elements
@@ -41,11 +42,11 @@ Unlike traditional text-based RAG that relies on OCR, this system treats PDF pag
 
 ## Models
 
-| Component | Model | Size | Purpose |
-|-----------|-------|------|---------|
-| Retriever | [vidore/colpali-v1.3](https://huggingface.co/vidore/colpali-v1.3) | 3B | Visual document retrieval |
-| Base Model | [vidore/colpaligemma-3b-pt-448-base](https://huggingface.co/vidore/colpaligemma-3b-pt-448-base) | 3B | ColPali base model |
-| Generator | [Qwen/Qwen2-VL-7B-Instruct](https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct) | 7B | Multimodal answer generation |
+| Component  | Model                                                                                           | Size | Purpose                      |
+| ---------- | ----------------------------------------------------------------------------------------------- | ---- | ---------------------------- |
+| Retriever  | [vidore/colpali-v1.3](https://huggingface.co/vidore/colpali-v1.3)                               | 3B   | Visual document retrieval    |
+| Base Model | [vidore/colpaligemma-3b-pt-448-base](https://huggingface.co/vidore/colpaligemma-3b-pt-448-base) | 3B   | ColPali base model           |
+| Generator  | [Qwen/Qwen2-VL-7B-Instruct](https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct)                   | 7B   | Multimodal answer generation |
 
 > **Why Qwen2-VL-7B?** Due to proxy/firewall restrictions, models cannot be downloaded directly on the HPC cluster. They must be downloaded locally and transferred manually. The 7B model was chosen to fit within local storage constraints (~15GB). For better results, consider using larger VLMs like Qwen2-VL-72B or LLaVA-NeXT if your setup allows direct downloads or larger storage.
 
@@ -104,6 +105,14 @@ export HF_HUB_OFFLINE=1
 
 ## Usage
 
+### Quick Start
+
+ssh mogon-nhr
+pw
+
+cd /lustre/project/ki-qarbs/nwang01/VisualRagPipeline
+source venv/bin/activate
+
 ### Interactive Mode
 
 Ask multiple questions without reloading models:
@@ -146,28 +155,31 @@ python run_visual_rag.py \
 
 ### Command Line Arguments
 
-| Argument | Description | Default |
-|----------|-------------|---------|
-| `--pdf` | Path to PDF file | Required |
-| `--query` | Question to ask | None |
-| `--top-k` | Number of pages to retrieve | 3 |
-| `--reindex` | Force rebuild index | False |
-| `-i, --interactive` | Interactive mode | False |
+| Argument            | Description                 | Default  |
+| ------------------- | --------------------------- | -------- |
+| `--pdf`             | Path to PDF file            | Required |
+| `--query`           | Question to ask             | None     |
+| `--top-k`           | Number of pages to retrieve | 3        |
+| `--reindex`         | Force rebuild index         | False    |
+| `-i, --interactive` | Interactive mode            | False    |
 
 ## SLURM Job Submission
 
 1. Copy the template and edit with your paths:
+
 ```bash
 cp submit_visual_rag.slurm.template submit_visual_rag.slurm
 # Edit submit_visual_rag.slurm with your email and project paths
 ```
 
 2. Submit the job:
+
 ```bash
 sbatch submit_visual_rag.slurm
 ```
 
 The template includes placeholders for:
+
 - `YOUR_EMAIL@uni-mainz.de` - your email for notifications
 - `YOUR_PROJECT` - your project directory path
 

@@ -1,16 +1,11 @@
-# Core (both versions)
+# ColPali retrieval (cluster GPU) + Groq generation (API)
 byaldi>=0.0.5
-
-# Colab version
+pymupdf
+fpdf2>=2.7.5
+streamlit>=1.35.0
+fastmcp>=3.0.0
+python-dotenv
 groq
 pdf2image
 requests
 ipython
-
-# Local/Cluster version
-transformers
-accelerate
-qwen-vl-utils
-torch
-sentence-transformers
-pymupdf
