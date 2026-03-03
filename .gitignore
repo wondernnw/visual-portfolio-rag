@@ -3,3 +3,5 @@ colpali-model/
 .DS_Store
 submit_visual_rag.slurm
 uni_doc/
+.claude
+

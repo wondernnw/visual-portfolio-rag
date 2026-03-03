@@ -17,7 +17,7 @@ source $(conda info --base)/etc/profile.d/conda.sh
 conda activate colpali_env
 
 # Set environment variables
-export HF_HOME="/lustre/project/ki-qarbs/nwang01/VisualRagPipeline/models"
+export HF_HOME="/lustre/project/ki-qarbs/nwang01/PortfolioEvalTool/models"
 export TRANSFORMERS_CACHE="$HF_HOME/hub"
 export SENTENCE_TRANSFORMERS_HOME="$HF_HOME"
 
@@ -29,15 +29,15 @@ export TRANSFORMERS_OFFLINE=1
 export PATH="/home/nwang01/.conda/envs/colpali_env/bin:$PATH"
 
 # Working directory
-cd /lustre/project/ki-qarbs/nwang01/VisualRagPipeline
+cd /lustre/project/ki-qarbs/nwang01/PortfolioEvalTool
 
 # Create output directories
 mkdir -p logs results
 
 # Run Portfolio Evaluation Agent
 /home/nwang01/.conda/envs/colpali_env/bin/python evaluate_portfolio.py \
-    --portfolio "/lustre/project/ki-qarbs/nwang01/VisualRagPipeline/doc/portfolio_motivation.pdf" \
-    --checkliste "/lustre/project/ki-qarbs/nwang01/VisualRagPipeline/doc/checkliste_motivation.pdf" \
+    --portfolio "/lustre/project/ki-qarbs/nwang01/PortfolioEvalTool/doc/portfolio_motivation.pdf" \
+    --checkliste "/lustre/project/ki-qarbs/nwang01/PortfolioEvalTool/doc/checkliste_motivation.pdf" \
     --output "results/evaluation_$(date +%Y%m%d_%H%M%S).pdf" \
     --top-k 3 \
     --reindex

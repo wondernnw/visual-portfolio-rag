@@ -21,7 +21,7 @@ def detect_device() -> str:
 
 HF_HOME = os.environ.get(
     "HF_HOME",
-    "/lustre/project/ki-qarbs/nwang01/VisualRagPipeline/models",
+    "/lustre/project/ki-qarbs/nwang01/PortfolioEvalTool/models",
 )
 INDEX_NAME = "portfolio_eval_index"
 

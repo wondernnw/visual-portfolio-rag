@@ -110,7 +110,7 @@ export HF_HUB_OFFLINE=1
 ssh mogon-nhr
 pw
 
-cd /lustre/project/ki-qarbs/nwang01/VisualRagPipeline
+cd /lustre/project/ki-qarbs/nwang01/PortfolioEvalTool
 source venv/bin/activate
 
 ### Interactive Mode
@@ -186,7 +186,7 @@ The template includes placeholders for:
 ## Project Structure
 
 ```
-VisualRagPipeline/
+PortfolioEvalTool/
 ├── README.md                # Main README (links to both)
 ├── README_LOCAL.md          # This file
 ├── README_COLAB.md          # Colab version docs

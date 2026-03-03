@@ -18,7 +18,7 @@ from qwen_vl_utils import process_vision_info
 import torch
 
 # Configuration
-HF_HOME = os.environ.get("HF_HOME", "/lustre/project/ki-qarbs/nwang01/VisualRagPipeline/models")
+HF_HOME = os.environ.get("HF_HOME", "/lustre/project/ki-qarbs/nwang01/PortfolioEvalTool/models")
 INDEX_NAME = "visual_doc_index"
 
 
