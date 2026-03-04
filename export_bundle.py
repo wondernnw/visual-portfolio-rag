@@ -65,21 +65,13 @@ def main():
         "HF_HOME",
         "/lustre/project/ki-qarbs/nwang01/PortfolioEvalTool/models",
     )
-    # Try local model first — prefer HF cache snapshot format (works with byaldi)
+    # Try local model — prefer HF cache snapshot (has full model with config.json)
     model_path = "vidore/colpali-v1.3"
-    candidates = [
-        os.path.join(hf_home, "hub/models--vidore--colpali-v1.3/snapshots"),
-        os.path.join(hf_home, "hub/colpali-v1.3"),
-    ]
-    for candidate in candidates:
-        if os.path.exists(candidate):
-            if candidate.endswith("snapshots"):
-                snaps = os.listdir(candidate)
-                if snaps:
-                    model_path = os.path.join(candidate, snaps[0])
-            else:
-                model_path = candidate
-            break
+    snapshots_dir = os.path.join(hf_home, "hub/models--vidore--colpali-v1.3/snapshots")
+    if os.path.exists(snapshots_dir):
+        snaps = os.listdir(snapshots_dir)
+        if snaps:
+            model_path = os.path.join(snapshots_dir, snaps[0])
 
     print(f"[export] Loading ColPali from {model_path} ...")
     rag = RAGMultiModalModel.from_pretrained(model_path)

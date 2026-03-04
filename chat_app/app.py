@@ -293,6 +293,18 @@ def main():
     for msg in st.session_state.messages:
         display_message(msg["role"], msg["content"])
 
+    # Display last evaluation results (persists after rerun)
+    if st.session_state.get("evaluations") and not st.session_state.get("run_full_pipeline"):
+        with st.chat_message("assistant"):
+            evals = st.session_state.evaluations
+            total = sum(e["punkte"] for e in evals)
+            total_max = sum(e["max_punkte"] for e in evals)
+            st.metric("Gesamtergebnis", f"{total} / {total_max} Punkte")
+            for ev in evals:
+                _display_single_evaluation(ev)
+            if st.session_state.get("report_path"):
+                st.success(f"PDF-Bericht erstellt: {os.path.basename(st.session_state.report_path)}")
+
     # Handle full pipeline run (from button)
     if st.session_state.get("run_full_pipeline"):
         st.session_state.run_full_pipeline = False
@@ -355,6 +367,7 @@ def _run_full_pipeline():
         st.session_state.messages.append(
             {"role": "assistant", "content": "Bewertung abgeschlossen!"}
         )
+    st.rerun()
 
 
 def _run_single_step(tool_name: str, args: dict):

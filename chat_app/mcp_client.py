@@ -42,9 +42,10 @@ class MCPBridge:
         """Call a tool on the MCP server asynchronously."""
         async with Client(self._server) as client:
             result = await client.call_tool(name, arguments)
-            # fastmcp returns a list of content blocks; extract text
-            if result and hasattr(result[0], "text"):
-                return json.loads(result[0].text)
+            # fastmcp may return CallToolResult object or list of content blocks
+            content = getattr(result, "content", result)
+            if content and hasattr(content[0], "text"):
+                return json.loads(content[0].text)
             return result
 
     async def _list_tools_async(self) -> List[Dict]:

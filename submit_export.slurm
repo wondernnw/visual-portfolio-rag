@@ -21,8 +21,9 @@ export HF_HOME="/lustre/project/ki-qarbs/nwang01/PortfolioEvalTool/models"
 export TRANSFORMERS_CACHE="$HF_HOME/hub"
 export SENTENCE_TRANSFORMERS_HOME="$HF_HOME"
 
-# Note: HF_HUB_OFFLINE/TRANSFORMERS_OFFLINE removed — they block
-# byaldi from loading local model files. No internet on compute nodes anyway.
+# Use local models only (no internet on compute nodes)
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
 
 # Fix PATH to use conda python
 export PATH="/home/nwang01/.conda/envs/colpali_env/bin:$PATH"
