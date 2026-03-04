@@ -34,6 +34,9 @@ cd /lustre/project/ki-qarbs/nwang01/PortfolioEvalTool
 # Create directories
 mkdir -p logs bundles
 
+# Clean up old bundles
+rm -f bundles/bundle_*.json
+
 # ---- Configure these paths before running ----
 PORTFOLIO="${1:-uploads/portfolios/motivation_adam.pdf}"
 CRITERIA="criteria.json"

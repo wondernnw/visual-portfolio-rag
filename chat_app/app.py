@@ -3,8 +3,10 @@
 Mac-side app: loads a pre-computed retrieval bundle, evaluates via Groq API.
 """
 
+import glob
 import json
 import os
+import subprocess
 from datetime import datetime
 
 from dotenv import load_dotenv
@@ -14,6 +16,14 @@ import streamlit as st
 
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
+# Bundle directory (scp target from cluster)
+PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
+BUNDLE_DIR = os.path.join(PROJECT_ROOT, "bundles")
+
+# Cluster configuration
+CLUSTER_HOST = "mogon-nhr"
+CLUSTER_PROJECT = "/lustre/project/ki-qarbs/nwang01/PortfolioEvalTool"
 
 from chat_app.chat_agent import ChatEvent, DeterministicAgent, EventType, GroqChatAgent
 from chat_app.config import AppConfig
@@ -73,6 +83,65 @@ def save_uploaded_file(uploaded_file, subdir: str = "") -> str:
     with open(path, "wb") as f:
         f.write(uploaded_file.getbuffer())
     return path
+
+
+def find_latest_bundle() -> str | None:
+    """Find the latest bundle JSON in the bundles/ directory.
+
+    Keeps only the latest bundle and removes older ones.
+    """
+    os.makedirs(BUNDLE_DIR, exist_ok=True)
+    files = sorted(glob.glob(os.path.join(BUNDLE_DIR, "bundle_*.json")))
+    if not files:
+        return None
+    # Clean up old bundles, keep only the latest
+    for old in files[:-1]:
+        os.remove(old)
+    return files[-1]
+
+
+def upload_to_cluster(local_path: str) -> tuple[bool, str]:
+    """Upload a portfolio PDF to the cluster via scp."""
+    filename = os.path.basename(local_path)
+    remote = f"{CLUSTER_HOST}:{CLUSTER_PROJECT}/uploads/portfolios/{filename}"
+    result = subprocess.run(
+        ["scp", local_path, remote],
+        capture_output=True, text=True, timeout=60,
+    )
+    if result.returncode == 0:
+        return True, filename
+    return False, result.stderr.strip()
+
+
+def submit_cluster_job(filename: str) -> tuple[bool, str]:
+    """Submit the export_bundle SLURM job on the cluster."""
+    cmd = f"cd {CLUSTER_PROJECT} && sbatch --cluster=mogonki submit_export.slurm uploads/portfolios/{filename}"
+    result = subprocess.run(
+        ["ssh", CLUSTER_HOST, cmd],
+        capture_output=True, text=True, timeout=30,
+    )
+    if result.returncode == 0:
+        return True, result.stdout.strip()
+    return False, result.stderr.strip()
+
+
+def fetch_bundle_from_cluster() -> tuple[bool, str]:
+    """Fetch the latest bundle from the cluster to local bundles/ dir."""
+    os.makedirs(BUNDLE_DIR, exist_ok=True)
+    # Clean old local bundles
+    for old in glob.glob(os.path.join(BUNDLE_DIR, "bundle_*.json")):
+        os.remove(old)
+    remote = f"{CLUSTER_HOST}:{CLUSTER_PROJECT}/bundles/bundle_*.json"
+    result = subprocess.run(
+        ["scp", remote, BUNDLE_DIR + "/"],
+        capture_output=True, text=True, timeout=120,
+    )
+    if result.returncode == 0:
+        latest = find_latest_bundle()
+        if latest:
+            return True, os.path.basename(latest)
+        return False, "Bundle kopiert aber nicht gefunden."
+    return False, result.stderr.strip()
 
 
 # ---------------------------------------------------------------------------
@@ -200,22 +269,68 @@ def render_sidebar():
 
         st.divider()
 
-        # File uploads
-        st.subheader("Dateien hochladen")
+        # Portfolio upload & cluster export
+        st.subheader("1. Portfolio hochladen")
 
-        bundle_file = st.file_uploader(
-            "Retrieval-Bundle (JSON)",
-            type=["json"],
-            key="bundle_upload",
-            help="Vom Cluster exportiertes Bundle (export_bundle.py)",
+        portfolio_file = st.file_uploader(
+            "Portfolio PDF",
+            type=["pdf"],
+            key="portfolio_upload",
+            help="Portfolio-PDF wird zum Cluster gesendet",
         )
-        if bundle_file:
-            path = save_uploaded_file(bundle_file, "bundles")
-            st.session_state.bundle_path = path
-            st.success(f"Bundle: {bundle_file.name}")
+        if portfolio_file:
+            # Save locally first
+            local_path = save_uploaded_file(portfolio_file, "portfolios")
+            st.session_state.portfolio_local_path = local_path
+            st.success(f"Portfolio: {portfolio_file.name}")
 
+        if st.button(
+            "An Cluster senden & Export starten",
+            disabled=not st.session_state.get("portfolio_local_path"),
+            use_container_width=True,
+        ):
+            local_path = st.session_state.portfolio_local_path
+            with st.spinner("Sende an Cluster..."):
+                ok, msg = upload_to_cluster(local_path)
+            if ok:
+                st.success(f"Hochgeladen: {msg}")
+                with st.spinner("SLURM-Job wird gestartet..."):
+                    ok2, msg2 = submit_cluster_job(msg)
+                if ok2:
+                    st.success(msg2)
+                else:
+                    st.error(f"Job-Fehler: {msg2}")
+            else:
+                st.error(f"Upload-Fehler: {msg}")
+
+        st.divider()
+
+        # Bundle fetch
+        st.subheader("2. Bundle laden")
+
+        if st.button("Bundle vom Cluster holen", use_container_width=True):
+            with st.spinner("Lade Bundle vom Cluster..."):
+                ok, msg = fetch_bundle_from_cluster()
+            if ok:
+                st.success(f"Bundle: {msg}")
+                st.rerun()
+            else:
+                st.error(f"Fehler: {msg}")
+
+        # Auto-detect bundle from bundles/ directory
+        latest = find_latest_bundle()
+        if latest:
+            st.session_state.bundle_path = latest
+            st.success(f"Bundle: {os.path.basename(latest)}")
+        else:
+            st.info("Kein Bundle vorhanden.")
+
+        st.divider()
+
+        # Checkliste upload (optional)
+        st.subheader("Checkliste (optional)")
         checkliste_file = st.file_uploader(
-            "Checkliste PDF (optional)",
+            "Checkliste PDF",
             type=["pdf"],
             key="checkliste_upload",
             help="Fuer Checklisten-Bilder in der Bewertung",
